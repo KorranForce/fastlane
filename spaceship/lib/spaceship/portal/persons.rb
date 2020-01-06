@@ -25,11 +25,11 @@ module Spaceship
 
         def factory_invite(invitees)
           if invitees.kind_of?(Hash)
-            return Spaceship::Portal::Invite.factory(invitees)
+            return Spaceship::Portal::Invite.factory(invitees, client)
           end
           final_invitees = []
           invitees.each do |invitee|
-            final_invitees << Spaceship::Portal::Invite.factory(invitee)
+            final_invitees << Spaceship::Portal::Invite.factory(invitee, client)
           end
           return final_invitees
         end
@@ -38,13 +38,13 @@ module Spaceship
           if members.kind_of?(Hash)
             attrs = members
             attrs[:type] = type
-            return Spaceship::Portal::Person.factory(attrs)
+            return Spaceship::Portal::Person.factory(attrs, client)
           end
           final_members = []
           members.each do |member|
             attrs = member
             attrs[:type] = type
-            final_members << Spaceship::Portal::Person.factory(attrs)
+            final_members << Spaceship::Portal::Person.factory(attrs, client)
           end
           return final_members
         end

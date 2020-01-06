@@ -136,7 +136,7 @@ module Spaceship
       # A push notification certificate for websites
       class WebsitePush < PushCertificate
         def self.portal_type
-          Spaceship::Portal::WebsitePush
+          Spaceship::Portal::WebsitePush.set_client(client)
         end
       end
 
@@ -330,7 +330,7 @@ module Spaceship
         # Default portal class to use when finding by bundle_id
         # @return (Class): The class this type of certificate belongs to
         def portal_type
-          Spaceship::Portal::App
+          Spaceship::Portal::App.set_client(client)
         end
       end
 

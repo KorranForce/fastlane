@@ -223,7 +223,7 @@ module Spaceship
           # Verify if `attrs` contains the info needed to instantiate a template.
           # If not, the template will be lazily loaded.
           if attrs['profile'] && attrs['profile']['description']
-            attrs['template'] = ProvisioningProfileTemplate.factory(attrs['template'])
+            attrs['template'] = ProvisioningProfileTemplate.factory(attrs['template'], client)
           end
 
           klass.client = @client
@@ -261,7 +261,7 @@ module Spaceship
           raise "Missing required parameter 'bundle_id'" if bundle_id.to_s.empty?
           raise "Missing required parameter 'certificate'. e.g. use `Spaceship::Portal::Certificate::Production.all.first`" if certificate.to_s.empty?
 
-          app = Spaceship::Portal::App.find(bundle_id, mac: mac)
+          app = Spaceship::Portal::App.set_client(client).find(bundle_id, mac: mac)
           raise "Could not find app with bundle id '#{bundle_id}'" unless app
 
           raise "Invalid sub_platform #{sub_platform}, valid values are tvOS" if !sub_platform.nil? && sub_platform != 'tvOS'
@@ -284,11 +284,11 @@ module Spaceship
             if self == Development || self == AdHoc
               # For Development and AdHoc we usually want all compatible devices by default
               if mac
-                devices = Spaceship::Portal::Device.all_macs
+                devices = Spaceship::Portal::Device.set_client(client).all_macs
               elsif sub_platform == 'tvOS'
-                devices = Spaceship::Portal::Device.all_apple_tvs
+                devices = Spaceship::Portal::Device.set_client(client).all_apple_tvs
               else
-                devices = Spaceship::Portal::Device.all_ios_profile_devices
+                devices = Spaceship::Portal::Device.set_client(client).all_ios_profile_devices
               end
             end
           end

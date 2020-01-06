@@ -118,7 +118,13 @@ module Spaceship
         return unless raw_data['associatedApplicationGroups']
 
         @associated_groups ||= raw_data['associatedApplicationGroups'].map do |info|
-          Spaceship::Portal::AppGroup.new(info)
+          Spaceship::Portal::AppGroup.new(info, client)
+          #or
+          # Spaceship::Portal::AppGroup.set_client(client).new(info)
+          #or
+          # Spaceship::Portal::AppGroup.set_client(client).factory(info)
+          #or
+          # Spaceship::Portal::AppGroup.factory(info, client)
         end
       end
 
@@ -126,7 +132,7 @@ module Spaceship
         return unless raw_data['associatedCloudContainers']
 
         @associated_cloud_containers ||= raw_data['associatedCloudContainers'].map do |info|
-          Spaceship::Portal::CloudContainer.new(info)
+          Spaceship::Portal::CloudContainer.new(info, client)
         end
       end
 
