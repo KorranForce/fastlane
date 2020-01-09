@@ -116,62 +116,54 @@ module Spaceship
       end
     end
 
-    def details_for_app(app)
-      r = request(:post, "account/#{platform_slug(app.mac?)}/identifiers/getAppIdDetail.action", {
+    def details_for_app(app_id, mac: false)
+      r = request(:post, "account/#{platform_slug(mac)}/identifiers/getAppIdDetail.action", {
         teamId: team_id,
-        appIdId: app.app_id
+        appIdId: app_id
       })
       parse_response(r, 'appId')
     end
 
-    def update_service_for_app(app, service)
+    def update_service_for_app(app_id, service)
       ensure_csrf(Spaceship::Portal::App)
 
       request(:post, service.service_uri, {
         teamId: team_id,
-        displayId: app.app_id,
+        displayId: app_id,
         featureType: service.service_id,
         featureValue: service.value
       })
-
-      details_for_app(app)
     end
 
-    def associate_groups_with_app(app, groups)
+    def associate_groups_with_app(app_id, group_ids)
       ensure_csrf(Spaceship::Portal::AppGroup)
 
       request(:post, 'account/ios/identifiers/assignApplicationGroupToAppId.action', {
         teamId: team_id,
-        appIdId: app.app_id,
-        displayId: app.app_id,
-        applicationGroups: groups.map(&:app_group_id)
+        appIdId: app_id,
+        displayId: app_id,
+        applicationGroups: group_ids
       })
-
-      details_for_app(app)
     end
 
-    def associate_cloud_containers_with_app(app, containers)
+    def associate_cloud_containers_with_app(app_id, container_ids)
       ensure_csrf(Spaceship::Portal::CloudContainer)
 
       request(:post, 'account/ios/identifiers/assignCloudContainerToAppId.action', {
           teamId: team_id,
-          appIdId: app.app_id,
-          cloudContainers: containers.map(&:cloud_container)
+          appIdId: app_id,
+          cloudContainers: container_ids
       })
-
-      details_for_app(app)
     end
 
-    def associate_merchants_with_app(app, merchants, mac)
+    def associate_merchants_with_app(app_id, merchant_ids, mac: false)
       ensure_csrf(Spaceship::Portal::Merchant)
 
       request(:post, "account/#{platform_slug(mac)}/identifiers/assignOMCToAppId.action", {
         teamId: team_id,
-        appIdId: app.app_id,
-        omcIds: merchants.map(&:merchant_id)
+        appIdId: app_id,
+        omcIds: merchant_ids
       })
-
-      details_for_app(app)
     end
 
     def valid_name_for(input)

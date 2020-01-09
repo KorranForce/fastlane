@@ -146,15 +146,15 @@ module Spaceship
 
       # Update name of this App ID.
       # @return (App) The app you updated. This is nil if the app can't be found
-      def update_name!(name, mac: false)
-        app = client.update_app_name!(app_id, name, mac: mac)
+      def update_name!(name)
+        app = client.update_app_name!(app_id, name, mac: mac?)
         self.class.factory(app)
       end
 
       # Fetch a specific App ID details based on the bundle_id
       # @return (App) The app you're looking for. This is nil if the app can't be found.
       def details
-        app = client.details_for_app(self)
+        app = client.details_for_app(app_id, mac: mac?)
         self.class.factory(app)
       end
 
@@ -162,31 +162,31 @@ module Spaceship
       # @return (App) The updated detailed app. This is nil if the app couldn't be found
       def associate_groups(groups)
         raise "`associate_groups` not available for Mac apps" if mac?
-        app = client.associate_groups_with_app(self, groups)
-        self.class.factory(app)
+        client.associate_groups_with_app(app_id, groups.map(&:app_group_id))
+        details
       end
 
       # Associate specific iCloud Containers with this app
       # @return (App) The updated detailed app. This is nil if the app couldn't be found.
       def associate_cloud_containers(containers)
         raise "`associate_cloud_containers` not available for Mac apps" if mac?
-        app = client.associate_cloud_containers_with_app(self, containers)
-        self.class.factory(app)
+        client.associate_cloud_containers_with_app(app_id, containers.map(&:cloud_container))
+        details
       end
 
       # Associate specific merchants with this app
       # @return (App) The updated detailed app. This is nil if the app couldn't be found
       def associate_merchants(merchants)
-        app = client.associate_merchants_with_app(self, merchants, mac?)
-        self.class.factory(app)
+        client.associate_merchants_with_app(app_id, merchants.map(&:merchant_id), mac: mac?)
+        details
       end
 
       # Update a service for the app with given AppService object
       # @return (App) The updated detailed app. This is nil if the app couldn't be found
       def update_service(service)
         raise "`update_service` not implemented for Mac apps" if mac?
-        app = client.update_service_for_app(self, service)
-        self.class.factory(app)
+        client.update_service_for_app(app_id, service)
+        details
       end
 
       # @return (Bool) Is this a Mac app?
