@@ -99,7 +99,10 @@ module Spaceship
             type = :explicit
           end
 
-          new_app = client.create_app!(type, name, bundle_id, mac: mac, enable_services: enable_services)
+          new_app = client.create_app!(type, name, bundle_id,
+            mac: mac,
+            enable_services: enable_services.map {|k, v| [v.service_id.to_sym, v.value]}.to_h
+          )
           self.new(new_app)
         end
 
@@ -185,7 +188,7 @@ module Spaceship
       # @return (App) The updated detailed app. This is nil if the app couldn't be found
       def update_service(service)
         raise "`update_service` not implemented for Mac apps" if mac?
-        client.update_service_for_app(app_id, service)
+        client.update_service_for_app(app_id, service.service_id, service.value)
         details
       end
 

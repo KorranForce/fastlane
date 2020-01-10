@@ -12,22 +12,9 @@ module Spaceship
       #   false
       attr_accessor :value
 
-      # @return (String) The service URI for this service
-      # @example
-      #    "account/ios/identifiers/updateService.action"
-      attr_accessor :service_uri
-
       def initialize(service_id, value)
         @service_id = service_id
         @value = value
-
-        if @service_id == "push"
-          # Push notifications have a special URI
-          @service_uri = "account/ios/identifiers/updatePushService.action"
-        else
-          # Default service URI
-          @service_uri = "account/ios/identifiers/updateService.action"
-        end
       end
 
       def self.new_service(id, values: { on: true, off: false })
@@ -79,8 +66,7 @@ module Spaceship
       def ==(other)
         self.class == other.class &&
           self.service_id == other.service_id &&
-          self.value == other.value &&
-          self.service_uri == other.service_uri
+          self.value == other.value
       end
     end
   end

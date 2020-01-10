@@ -124,14 +124,21 @@ module Spaceship
       parse_response(r, 'appId')
     end
 
-    def update_service_for_app(app_id, service)
+    def update_service_for_app(app_id, service_id, service_value)
       ensure_csrf(Spaceship::Portal::App)
 
-      request(:post, service.service_uri, {
+      if service_id == "push"
+        # Push notifications have a special URI
+        update_service_uri = "account/ios/identifiers/updatePushService.action"
+      else
+        # Default service URI
+        update_service_uri = "account/ios/identifiers/updateService.action"
+      end
+      request(:post, update_service_uri, {
         teamId: team_id,
         displayId: app_id,
-        featureType: service.service_id,
-        featureValue: service.value
+        featureType: service_id,
+        featureValue: service_value
       })
     end
 
@@ -205,7 +212,7 @@ module Spaceship
       }
       params.merge!(ident_params)
       enable_services.each do |k, v|
-        params[v.service_id.to_sym] = v.value
+        params[k.to_sym] = v
       end
       r = request(:post, "account/#{platform_slug(mac)}/identifiers/addAppId.action", params)
       parse_response(r, 'appId')
