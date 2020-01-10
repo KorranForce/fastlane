@@ -1,16 +1,5 @@
 require_relative '../client'
 
-require_relative 'app'
-require_relative 'app_group'
-require_relative 'cloud_container'
-require_relative 'device'
-require_relative 'merchant'
-require_relative 'passbook'
-require_relative 'provisioning_profile'
-require_relative 'certificate'
-require_relative 'website_push'
-require_relative 'persons'
-
 module Spaceship
   # rubocop:disable Metrics/ClassLength
   class PortalClient < Spaceship::Client
@@ -103,6 +92,9 @@ module Spaceship
     #####################################################
     # @!group Apps
     #####################################################
+    def ensure_app_csrf
+      ensure_csrf(:app) {apps}
+    end
 
     def apps(mac: false)
       paging do |page_number|
@@ -125,7 +117,7 @@ module Spaceship
     end
 
     def update_service_for_app(app_id, service_id, service_value)
-      ensure_csrf(Spaceship::Portal::App)
+      ensure_app_csrf
 
       if service_id == "push"
         # Push notifications have a special URI
@@ -143,7 +135,7 @@ module Spaceship
     end
 
     def associate_groups_with_app(app_id, group_ids)
-      ensure_csrf(Spaceship::Portal::AppGroup)
+      ensure_app_group_csrf
 
       request(:post, 'account/ios/identifiers/assignApplicationGroupToAppId.action', {
         teamId: team_id,
@@ -154,7 +146,7 @@ module Spaceship
     end
 
     def associate_cloud_containers_with_app(app_id, container_ids)
-      ensure_csrf(Spaceship::Portal::CloudContainer)
+      ensure_cloud_container_csrf
 
       request(:post, 'account/ios/identifiers/assignCloudContainerToAppId.action', {
           teamId: team_id,
@@ -164,7 +156,7 @@ module Spaceship
     end
 
     def associate_merchants_with_app(app_id, merchant_ids, mac: false)
-      ensure_csrf(Spaceship::Portal::Merchant)
+      ensure_merchant_csrf
 
       request(:post, "account/#{platform_slug(mac)}/identifiers/assignOMCToAppId.action", {
         teamId: team_id,
@@ -189,7 +181,7 @@ module Spaceship
       # We moved the ensure_csrf to the top of this method
       # as we got some users with issues around creating new apps
       # https://github.com/fastlane/fastlane/issues/5813
-      ensure_csrf(Spaceship::Portal::App)
+      ensure_app_csrf
 
       ident_params = case type.to_sym
                      when :explicit
@@ -219,7 +211,7 @@ module Spaceship
     end
 
     def delete_app!(app_id, mac: false)
-      ensure_csrf(Spaceship::Portal::App)
+      ensure_app_csrf
 
       r = request(:post, "account/#{platform_slug(mac)}/identifiers/deleteAppId.action", {
         teamId: team_id,
@@ -229,7 +221,7 @@ module Spaceship
     end
 
     def update_app_name!(app_id, name, mac: false)
-      ensure_csrf(Spaceship::Portal::App)
+      ensure_app_csrf
 
       r = request(:post, "account/#{platform_slug(mac)}/identifiers/updateAppIdName.action", {
         teamId: team_id,
@@ -242,6 +234,9 @@ module Spaceship
     #####################################################
     # @!group Passbook
     #####################################################
+    def ensure_passbook_csrf
+      ensure_csrf(:passbook) {passbooks}
+    end
 
     def passbooks
       paging do |page_number|
@@ -256,7 +251,7 @@ module Spaceship
     end
 
     def create_passbook!(name, bundle_id)
-      ensure_csrf(Spaceship::Portal::Passbook)
+      ensure_passbook_csrf
 
       r = request(:post, "account/ios/identifiers/addPassTypeId.action", {
           name: name,
@@ -267,7 +262,7 @@ module Spaceship
     end
 
     def delete_passbook!(passbook_id)
-      ensure_csrf(Spaceship::Portal::Passbook)
+      ensure_passbook_csrf
 
       r = request(:post, "account/ios/identifiers/deletePassTypeId.action", {
           teamId: team_id,
@@ -279,6 +274,9 @@ module Spaceship
     #####################################################
     # @!group Website Push
     #####################################################
+    def ensure_website_push_csrf
+      ensure_csrf(:website_push) {website_push}
+    end
 
     def website_push(mac: false)
       paging do |page_number|
@@ -293,7 +291,7 @@ module Spaceship
     end
 
     def create_website_push!(name, bundle_id, mac: false)
-      ensure_csrf(Spaceship::Portal::WebsitePush)
+      ensure_website_push_csrf
 
       r = request(:post, "account/#{platform_slug(mac)}/identifiers/addWebsitePushId.action", {
           name: name,
@@ -304,7 +302,7 @@ module Spaceship
     end
 
     def delete_website_push!(website_id, mac: false)
-      ensure_csrf(Spaceship::Portal::WebsitePush)
+      ensure_website_push_csrf
 
       r = request(:post, "account/#{platform_slug(mac)}/identifiers/deleteWebsitePushId.action", {
           teamId: team_id,
@@ -316,6 +314,9 @@ module Spaceship
     #####################################################
     # @!group Merchant
     #####################################################
+    def ensure_merchant_csrf
+      ensure_csrf(:merchant) {merchants}
+    end
 
     def merchants(mac: false)
       paging do |page_number|
@@ -330,7 +331,7 @@ module Spaceship
     end
 
     def create_merchant!(name, bundle_id, mac: false)
-      ensure_csrf(Spaceship::Portal::Merchant)
+      ensure_merchant_csrf
 
       r = request(:post, "account/#{platform_slug(mac)}/identifiers/addOMC.action", {
           name: name,
@@ -341,7 +342,7 @@ module Spaceship
     end
 
     def delete_merchant!(merchant_id, mac: false)
-      ensure_csrf(Spaceship::Portal::Merchant)
+      ensure_merchant_csrf
 
       r = request(:post, "account/#{platform_slug(mac)}/identifiers/deleteOMC.action", {
           teamId: team_id,
@@ -353,6 +354,9 @@ module Spaceship
     #####################################################
     # @!group App Groups
     #####################################################
+    def ensure_app_group_csrf
+      ensure_csrf(:app_group) {app_groups}
+    end
 
     def app_groups
       paging do |page_number|
@@ -367,7 +371,7 @@ module Spaceship
     end
 
     def create_app_group!(name, group_id)
-      ensure_csrf(Spaceship::Portal::AppGroup)
+      ensure_app_group_csrf
 
       r = request(:post, 'account/ios/identifiers/addApplicationGroup.action', {
         name: valid_name_for(name),
@@ -378,7 +382,7 @@ module Spaceship
     end
 
     def delete_app_group!(app_group_id)
-      ensure_csrf(Spaceship::Portal::AppGroup)
+      ensure_app_group_csrf
 
       r = request(:post, 'account/ios/identifiers/deleteApplicationGroup.action', {
         teamId: team_id,
@@ -390,6 +394,9 @@ module Spaceship
     #####################################################
     # @!group Cloud Containers
     #####################################################
+    def ensure_cloud_container_csrf
+      ensure_csrf(:cloud_container) {cloud_containers}
+    end
 
     def cloud_containers
       paging do |page_number|
@@ -401,14 +408,14 @@ module Spaceship
         })
         result = parse_response(r, 'cloudContainerList')
 
-        csrf_cache[Spaceship::Portal::CloudContainer] = self.csrf_tokens
+        csrf_cache[:cloud_container] = self.csrf_tokens
 
         result
       end
     end
 
     def create_cloud_container!(name, identifier)
-      ensure_csrf(Spaceship::Portal::CloudContainer)
+      ensure_cloud_container_csrf
 
       r = request(:post, 'account/cloudContainer/addCloudContainer.action', {
           name: valid_name_for(name),
@@ -421,6 +428,10 @@ module Spaceship
     #####################################################
     # @!group Team
     #####################################################
+    def ensure_team_member_csrf
+      ensure_csrf(:team_member) {team_members}
+    end
+
     def team_members
       response = request(:post) do |req|
         req.url("/services-account/#{PROTOCOL_VERSION}/account/getTeamMembers")
@@ -444,7 +455,7 @@ module Spaceship
     end
 
     def team_set_role(team_member_id, role)
-      ensure_csrf(Spaceship::Portal::Persons)
+      ensure_team_member_csrf
       response = request(:post) do |req|
         req.url("/services-account/#{PROTOCOL_VERSION}/account/setTeamMemberRoles")
         req.body = {
@@ -458,7 +469,7 @@ module Spaceship
     end
 
     def team_remove_member!(team_member_id)
-      ensure_csrf(Spaceship::Portal::Persons)
+      ensure_team_member_csrf
       response = request(:post) do |req|
         req.url("/services-account/#{PROTOCOL_VERSION}/account/removeTeamMembers")
         req.body = {
@@ -471,7 +482,7 @@ module Spaceship
     end
 
     def team_invite(email, role)
-      ensure_csrf(Spaceship::Portal::Persons)
+      ensure_team_member_csrf
       response = request(:post) do |req|
         req.url("/services-account/#{PROTOCOL_VERSION}/account/sendInvites")
         req.body = {
@@ -488,6 +499,9 @@ module Spaceship
     #####################################################
     # @!group Devices
     #####################################################
+    def ensure_device_csrf
+      ensure_csrf(:device) {devices}
+    end
 
     def devices(mac: false, include_disabled: false)
       paging do |page_number|
@@ -500,7 +514,7 @@ module Spaceship
         })
         result = parse_response(r, 'devices')
 
-        csrf_cache[Spaceship::Portal::Device] = self.csrf_tokens
+        csrf_cache[:device] = self.csrf_tokens
 
         result
       end
@@ -521,7 +535,7 @@ module Spaceship
     end
 
     def create_device!(device_name, device_id, mac: false)
-      ensure_csrf(Spaceship::Portal::Device)
+      ensure_device_csrf
 
       req = request(:post, "account/#{platform_slug(mac)}/device/addDevices.action", {
         teamId: team_id,
@@ -559,6 +573,9 @@ module Spaceship
     #####################################################
     # @!group Certificates
     #####################################################
+    def ensure_certificate_csrf
+      ensure_csrf(:certificate) {certificates(["5QPB9NHCEI"])}
+    end
 
     def certificates(types, mac: false)
       paging do |page_number|
@@ -574,7 +591,7 @@ module Spaceship
     end
 
     def create_certificate!(type, csr, app_id = nil, mac = false)
-      ensure_csrf(Spaceship::Portal::Certificate)
+      ensure_certificate_csrf
 
       r = request(:post, "account/#{platform_slug(mac)}/certificate/submitCertificateRequest.action", {
         teamId: team_id,
@@ -603,7 +620,7 @@ module Spaceship
     end
 
     def revoke_certificate!(certificate_id, type, mac: false)
-      ensure_csrf(Spaceship::Portal::Certificate)
+      ensure_certificate_csrf
 
       r = request(:post, "account/#{platform_slug(mac)}/certificate/revokeCertificate.action", {
         teamId: team_id,
@@ -616,6 +633,11 @@ module Spaceship
     #####################################################
     # @!group Provisioning Profiles
     #####################################################
+    def ensure_provisioning_profile_csrf
+      ensure_csrf(:provisioning_profile) do
+        fetch_csrf_token_for_provisioning
+      end
+    end
 
     def provisioning_profiles(mac: false)
       paging do |page_number|
@@ -630,7 +652,7 @@ module Spaceship
 
         result = parse_response(req, 'provisioningProfiles')
 
-        csrf_cache[Spaceship::Portal::ProvisioningProfile] = self.csrf_tokens
+        csrf_cache[:provisioning_profile] = self.csrf_tokens
 
         result
       end
@@ -654,7 +676,7 @@ module Spaceship
 
       result = parse_response(req, 'provisioningProfiles')
 
-      csrf_cache[Spaceship::Portal::ProvisioningProfile] = self.csrf_tokens
+      csrf_cache[:provisioning_profile] = self.csrf_tokens
 
       result
     end
@@ -668,9 +690,7 @@ module Spaceship
     end
 
     def create_provisioning_profile!(name, distribution_method, app_id, certificate_ids, device_ids, mac: false, sub_platform: nil, template_name: nil)
-      ensure_csrf(Spaceship::Portal::ProvisioningProfile) do
-        fetch_csrf_token_for_provisioning
-      end
+      ensure_provisioning_profile_csrf
 
       params = {
         teamId: team_id,
@@ -690,9 +710,7 @@ module Spaceship
     end
 
     def download_provisioning_profile(profile_id, mac: false)
-      ensure_csrf(Spaceship::Portal::ProvisioningProfile) do
-        fetch_csrf_token_for_provisioning
-      end
+      ensure_provisioning_profile_csrf
 
       r = request(:get, "account/#{platform_slug(mac)}/profile/downloadProfileContent", {
         teamId: team_id,
@@ -797,11 +815,9 @@ module Spaceship
     # Ensures that there are csrf tokens for the appropriate entity type
     # Relies on store_csrf_tokens to set csrf_tokens to the appropriate value
     # then stores that in the correct place in cache
-    # This method also takes a block, if you want to send a custom request, instead of
-    # calling `.all` on the given klass. This is used for provisioning profiles.
-    def ensure_csrf(klass)
-      if csrf_cache[klass]
-        self.csrf_tokens = csrf_cache[klass]
+    def ensure_csrf(entity, &block)
+      if csrf_cache[entity]
+        self.csrf_tokens = csrf_cache[entity]
         return
       end
 
@@ -809,9 +825,9 @@ module Spaceship
 
       # If we directly create a new resource (e.g. app) without querying anything before
       # we don't have a valid csrf token, that's why we have to do at least one request
-      block_given? ? yield : klass.all
+      block.call
 
-      csrf_cache[klass] = self.csrf_tokens
+      csrf_cache[entity] = self.csrf_tokens
     end
 
     # We need a custom way to fetch the csrf token for the provisioning profile requests, since
