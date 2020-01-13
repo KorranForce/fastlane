@@ -183,26 +183,12 @@ module Spaceship
       # https://github.com/fastlane/fastlane/issues/5813
       ensure_app_csrf
 
-      ident_params = case type.to_sym
-                     when :explicit
-                       {
-                         type: 'explicit',
-                         identifier: bundle_id,
-                         inAppPurchase: 'on',
-                         gameCenter: 'on'
-                       }
-                     when :wildcard
-                       {
-                         type: 'wildcard',
-                         identifier: bundle_id
-                       }
-                     end
-
       params = {
+        type: type.to_s,
+        identifier: bundle_id,
         name: valid_name_for(name),
         teamId: team_id
       }
-      params.merge!(ident_params)
       enable_services.each do |k, v|
         params[k.to_sym] = v
       end
