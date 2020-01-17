@@ -236,9 +236,9 @@ If it is, please open an issue at https://github.com/fastlane/fastlane/issues/ne
     end
 
     def phone_id_from_masked_number(phone_numbers, masked_number)
-      phone_numbers.each do |phone|
-        return phone['id'] if phone['numberWithDialCode'] == masked_number
-      end
+      phone_numbers.find { |phone|
+        phone['numberWithDialCode'] == masked_number
+      }['id']
     end
 
     def request_two_factor_code_from_phone_choose(phone_numbers, code_length)

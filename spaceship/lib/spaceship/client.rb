@@ -441,13 +441,6 @@ module Spaceship
       #
       # After this point, we sure have no valid session any more and have to create a new one
       #
-
-      data = {
-        accountName: user,
-        password: password,
-        rememberMe: true
-      }
-
       begin
         # The below workaround is only needed for 2 step verified machines
         # Due to escaping of cookie values we have a little workaround here
@@ -468,6 +461,11 @@ module Spaceship
           modified_cookie.gsub!(unescaped_important_cookie, escaped_important_cookie)
         end
 
+        data = {
+          accountName: user,
+          password: password,
+          rememberMe: true
+        }
         response = request(:post) do |req|
           req.url("https://idmsa.apple.com/appleauth/auth/signin")
           req.body = data.to_json
@@ -772,9 +770,8 @@ module Spaceship
 
     def do_login(user, password)
       @loggedin = false
-      ret = send_login_request(user, password) # different in subclasses
+      send_login_request(user, password) # different in subclasses
       @loggedin = true
-      ret
     end
 
     # Is called from `parse_response` to store the latest csrf_token (if available)
