@@ -4,15 +4,9 @@ require_relative 'tunes/tunes_client'
 module Spaceship
   class Client
     def handle_two_step_or_factor(response)
-      # extract `x-apple-id-session-id` and `scnt` from response, to be used by `update_request_headers`
-      @x_apple_id_session_id = response["x-apple-id-session-id"]
-      @scnt = response["scnt"]
+      save_session_headers(response)
 
-      # get authentication options
-      r = request(:get) do |req|
-        req.url("https://idmsa.apple.com/appleauth/auth")
-        update_request_headers(req)
-      end
+      r = request_auth_options
 
       if r.body.kind_of?(Hash) && r.body["trustedDevices"].kind_of?(Array)
         handle_two_step(r)
@@ -44,11 +38,7 @@ module Spaceship
 
     # this is extracted into its own method so it can be called multiple times (see end)
     def handle_two_step_for_device(device_id)
-      # Request token to device
-      r = request(:put) do |req|
-        req.url("https://idmsa.apple.com/appleauth/auth/verify/device/#{device_id}/securitycode")
-        update_request_headers(req)
-      end
+      r = request_two_step_to_device_id(device_id)
 
       # we use `Spaceship::TunesClient.new.handle_itc_response`
       # since this might be from the Dev Portal, but for 2 step
@@ -58,13 +48,7 @@ module Spaceship
       code = ask("Please enter the 4 digit code: ")
       puts("Requesting session...")
 
-      # Send token to server to get a valid session
-      r = request(:post) do |req|
-        req.url("https://idmsa.apple.com/appleauth/auth/verify/device/#{device_id}/securitycode")
-        req.headers['Content-Type'] = 'application/json'
-        req.body = { "code" => code.to_s }.to_json
-        update_request_headers(req)
-      end
+      r = send_two_step_code_to_device_id(code, device_id)
 
       begin
         Spaceship::TunesClient.new.handle_itc_response(r.body) # this will fail if the code is invalid
@@ -112,15 +96,13 @@ module Spaceship
       end
 
       # "verification code" has already be pushed to devices
-
-      security_code = response.body["securityCode"]
       # "securityCode": {
       # 	"length": 6,
       # 	"tooManyCodesSent": false,
       # 	"tooManyCodesValidated": false,
       # 	"securityCodeLocked": false
       # },
-      code_length = security_code["length"]
+      code_length = response.body["securityCode"]["length"]
 
       puts("")
       env_2fa_sms_default_phone_number = ENV["SPACESHIP_2FA_SMS_DEFAULT_PHONE_NUMBER"]
@@ -154,13 +136,7 @@ module Spaceship
 
       puts("Requesting session...")
 
-      # Send "verification code" back to server to get a valid session
-      r = request(:post) do |req|
-        req.url("https://idmsa.apple.com/appleauth/auth/verify/#{code_type}/securitycode")
-        req.headers['Content-Type'] = 'application/json'
-        req.body = body
-        update_request_headers(req)
-      end
+      r = send_verification_code(code_type, body)
 
       begin
         # we use `Spaceship::TunesClient.new.handle_itc_response`
@@ -255,13 +231,7 @@ If it is, please open an issue at https://github.com/fastlane/fastlane/issues/ne
 
     # this is used in two places: after choosing a phone number and when a phone number is set via ENV var
     def request_two_factor_code_from_phone(phone_id, phone_number, code_length)
-      # Request code
-      r = request(:put) do |req|
-        req.url("https://idmsa.apple.com/appleauth/auth/verify/phone")
-        req.headers['Content-Type'] = 'application/json'
-        req.body = { "phoneNumber" => { "id" => phone_id }, "mode" => "sms" }.to_json
-        update_request_headers(req)
-      end
+      r = request_two_factor_code_to_phone_id(phone_id)
 
       # we use `Spaceship::TunesClient.new.handle_itc_response`
       # since this might be from the Dev Portal, but for 2 step
@@ -287,10 +257,8 @@ If it is, please open an issue at https://github.com/fastlane/fastlane/issues/ne
       # - DES5c148586dfd451e55afb0175f62418f91
       # We actually only care about the DES value
 
-      request(:get) do |req|
-        req.url("https://idmsa.apple.com/appleauth/auth/2sv/trust")
-        update_request_headers(req)
-      end
+      trust_device
+
       # This request will fail if the user isn't added to a team on iTC
       # However we don't really care, this request will still return the
       # correct DES... cookie
@@ -298,6 +266,56 @@ If it is, please open an issue at https://github.com/fastlane/fastlane/issues/ne
       self.store_cookie
     end
 
+    def request_auth_options
+      # get authentication options
+      request(:get) do |req|
+        req.url("https://idmsa.apple.com/appleauth/auth")
+        update_request_headers(req)
+      end
+    end
+    def request_two_step_to_device_id(device_id)
+      request(:put) do |req|
+        req.url("https://idmsa.apple.com/appleauth/auth/verify/device/#{device_id}/securitycode")
+        update_request_headers(req)
+      end
+    end
+    def send_two_step_code_to_device_id(code, device_id)
+      request(:post) do |req|
+        req.url("https://idmsa.apple.com/appleauth/auth/verify/device/#{device_id}/securitycode")
+        req.headers['Content-Type'] = 'application/json'
+        req.body = { "code" => code.to_s }.to_json
+        update_request_headers(req)
+      end
+    end
+    def request_two_factor_code_to_phone_id(phone_id)
+      request(:put) do |req|
+        req.url("https://idmsa.apple.com/appleauth/auth/verify/phone")
+        req.headers['Content-Type'] = 'application/json'
+        req.body = { "phoneNumber" => { "id" => phone_id }, "mode" => "sms" }.to_json
+        update_request_headers(req)
+      end
+    end
+    def send_verification_code(code_type, body)
+      # Send "verification code" back to server to get a valid session
+      request(:post) do |req|
+        req.url("https://idmsa.apple.com/appleauth/auth/verify/#{code_type}/securitycode")
+        req.headers['Content-Type'] = 'application/json'
+        req.body = body
+        update_request_headers(req)
+      end
+    end
+    def trust_device
+      request(:get) do |req|
+        req.url("https://idmsa.apple.com/appleauth/auth/2sv/trust")
+        update_request_headers(req)
+      end
+    end
+
+    def save_session_headers(response)
+      # extract `x-apple-id-session-id` and `scnt` from response, to be used by `update_request_headers`
+      @x_apple_id_session_id = response["x-apple-id-session-id"]
+      @scnt = response["scnt"]
+    end
     # Responsible for setting all required header attributes for the requests
     # to succeed
     def update_request_headers(req)
