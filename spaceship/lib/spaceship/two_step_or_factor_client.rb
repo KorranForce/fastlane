@@ -38,11 +38,7 @@ module Spaceship
 
     # this is extracted into its own method so it can be called multiple times (see end)
     def handle_two_step_for_device(device_id)
-      r = request_two_step_to_device_id(device_id)
-
-      # we use `Spaceship::TunesClient.new.handle_itc_response`
-      # since this might be from the Dev Portal, but for 2 step
-      Spaceship::TunesClient.new.handle_itc_response(r.body)
+      request_two_step_to_device_id_and_handle_response(device_id)
 
       puts("Successfully requested notification")
       code = ask("Please enter the 4 digit code: ")
@@ -51,7 +47,7 @@ module Spaceship
       r = send_two_step_code_to_device_id(code, device_id)
 
       begin
-        Spaceship::TunesClient.new.handle_itc_response(r.body) # this will fail if the code is invalid
+        tunes_handle_itc_response(r.body) # this will fail if the code is invalid
       rescue => ex
         # If the code was entered wrong
         # {
@@ -139,9 +135,7 @@ module Spaceship
       r = send_verification_code(code_type, body)
 
       begin
-        # we use `Spaceship::TunesClient.new.handle_itc_response`
-        # since this might be from the Dev Portal, but for 2 factor
-        Spaceship::TunesClient.new.handle_itc_response(r.body) # this will fail if the code is invalid
+        tunes_handle_itc_response(r.body) # this will fail if the code is invalid
       rescue => ex
         # If the code was entered wrong
         # {
@@ -231,11 +225,7 @@ If it is, please open an issue at https://github.com/fastlane/fastlane/issues/ne
 
     # this is used in two places: after choosing a phone number and when a phone number is set via ENV var
     def request_two_factor_code_from_phone(phone_id, phone_number, code_length)
-      r = request_two_factor_code_to_phone_id(phone_id)
-
-      # we use `Spaceship::TunesClient.new.handle_itc_response`
-      # since this might be from the Dev Portal, but for 2 step
-      Spaceship::TunesClient.new.handle_itc_response(r.body)
+      request_two_factor_code_to_phone_id_and_handle_response(phone_id)
 
       puts("Successfully requested text message to #{phone_number}")
 
@@ -264,6 +254,21 @@ If it is, please open an issue at https://github.com/fastlane/fastlane/issues/ne
       # correct DES... cookie
 
       self.store_cookie
+    end
+
+    def request_two_step_to_device_id_and_handle_response(device_id)
+      response = request_two_step_to_device_id(device_id)
+      tunes_handle_itc_response(response.body)
+    end
+    def request_two_factor_code_to_phone_id_and_handle_response(phone_id)
+      response = request_two_factor_code_to_phone_id(phone_id)
+      tunes_handle_itc_response(response.body)
+    end
+
+    def tunes_handle_itc_response(body)
+      # we use `Spaceship::TunesClient.new.handle_itc_response`
+      # since this might be from the Dev Portal, but for 2 step/factor
+      Spaceship::TunesClient.new.handle_itc_response(body)
     end
 
     def request_auth_options
