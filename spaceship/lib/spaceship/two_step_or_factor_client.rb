@@ -3,17 +3,27 @@ require_relative 'tunes/tunes_client'
 
 module Spaceship
   class Client
+    attr_reader :two_step_or_factor_handler
+    def two_step_or_factor_handler=(handler)
+      @two_step_or_factor_handler = handler
+      handler.client = self
+    end
+
     def handle_two_step_or_factor(response)
-      save_session_headers(response)
-
-      r = request_auth_options
-
-      if r.body.kind_of?(Hash) && r.body["trustedDevices"].kind_of?(Array)
-        handle_two_step(r)
-      elsif r.body.kind_of?(Hash) && r.body["trustedPhoneNumbers"].kind_of?(Array) && r.body["trustedPhoneNumbers"].first.kind_of?(Hash)
-        handle_two_factor(r)
+      if two_step_or_factor_handler
+        two_step_or_factor_handler.handle(response)
       else
-        raise "Although response from Apple indicated activated Two-step Verification or Two-factor Authentication, spaceship didn't know how to handle this response: #{r.body}"
+        save_session_headers(response)
+
+        r = request_auth_options
+
+        if r.body.kind_of?(Hash) && r.body["trustedDevices"].kind_of?(Array)
+          handle_two_step(r)
+        elsif r.body.kind_of?(Hash) && r.body["trustedPhoneNumbers"].kind_of?(Array) && r.body["trustedPhoneNumbers"].first.kind_of?(Hash)
+          handle_two_factor(r)
+        else
+          raise "Although response from Apple indicated activated Two-step Verification or Two-factor Authentication, spaceship didn't know how to handle this response: #{r.body}"
+        end
       end
     end
 

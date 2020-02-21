@@ -28,6 +28,10 @@ module Spaceship
 
     attr_reader :client
 
+    def logged_in?
+      @loggedin
+    end
+
     # The user that is currently logged in
     attr_accessor :user
 
