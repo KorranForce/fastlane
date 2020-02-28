@@ -164,7 +164,7 @@ module Spaceship
 
       data = raw['data'] || raw # sometimes it's with data, sometimes it isn't
 
-      error_keys = ["sectionErrorKeys", "validationErrors", "serviceErrors"]
+      error_keys = ["sectionErrorKeys", "validationErrors", "serviceErrors", "service_errors"]
       info_keys = ["sectionInfoKeys", "sectionWarningKeys"]
       error_and_info_keys_to_check = error_keys + info_keys
 
